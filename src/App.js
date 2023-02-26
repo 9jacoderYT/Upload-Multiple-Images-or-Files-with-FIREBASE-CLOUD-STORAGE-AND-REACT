@@ -1,40 +1,91 @@
-import React, { useRef } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "./firebase-config";
+import React, { useEffect, useRef, useState } from "react";
+import { db } from "./firebase-config";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  getDoc,
+} from "firebase/firestore";
 
 import "./App.css";
 
 function App() {
-  const emailInputRef = useRef();
-  const passwordInputRef = useRef();
+  const productNameRef = useRef();
+  const productSizeRef = useRef();
+  const [products, setProducts] = useState();
 
-  const loginHandler = async () => {
-    const email = emailInputRef.current.value;
-    const password = passwordInputRef.current.value;
+  const productsCollectionRef = collection(db, "products");
 
-    // Login User
-    const user = await signInWithEmailAndPassword(auth, email, password)
-    console.log(user);
+  const createProduct = async () => {
+    const name = productNameRef.current.value;
+    const size = productSizeRef.current.value;
+
+    await addDoc(productsCollectionRef, {
+      productName: name,
+      productSize: size,
+    });
   };
 
-  const signUpHandler = async () => {
-    const email = emailInputRef.current.value;
-    const password = passwordInputRef.current.value;
+  const updateProduct = async (id, size) => {
+    const productDoc = doc(db, "products", id);
 
-    // Login User
-    const user = await createUserWithEmailAndPassword(auth, email, password)
-    console.log(user);
+    await updateDoc(productDoc, {
+      productSize: size + 1,
+    });
   };
+
+  const deleteProduct = async (id) => {
+    const productDoc = doc(db, "products", id);
+    await deleteDoc(productDoc);
+  };
+
+  useEffect(() => {
+    const getAllProducts = async () => {
+      const data = await getDocs(productsCollectionRef);
+      setProducts(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
+    };
+
+    getAllProducts();
+  }, []);
+
+  console.log(products);
+
+  if (!products) {
+    return <>Loading...</>;
+  }
 
   return (
     <div className="App">
-      Email
-      <input type="text" ref={emailInputRef} />
+      Product Name
+      <input type="text" ref={productNameRef} />
       <br />
-      Password
-      <input type="text" ref={passwordInputRef} />
-      <button onClick={submitHandler}>Submit</button>
+      Product Size
+      <input type="text" ref={productSizeRef} />
+      <button onClick={createProduct}>Submit</button>
+      <p>Products</p>
+      {products.map((product) => (
+        <div key={product.id}>
+          Name : {product.productName}
+          Size : {product.productSize}
+          <button
+            onClick={() => {
+              updateProduct(product.id, product.productSize);
+            }}
+          >
+            + 1
+          </button>
+          <button
+            onClick={() => {
+              deleteProduct(product.id);
+            }}
+          >
+            delete
+          </button>
+        </div>
+      ))}
     </div>
   );
 }
