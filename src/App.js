@@ -1,91 +1,39 @@
-import React, { useEffect, useRef, useState } from "react";
-import { db } from "./firebase-config";
-import {
-  collection,
-  getDocs,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  getDoc,
-} from "firebase/firestore";
-
+import { useState } from "react";
 import "./App.css";
 
 function App() {
-  const productNameRef = useRef();
-  const productSizeRef = useRef();
-  const [products, setProducts] = useState();
+  const [error, setError] = useState(null);
 
-  const productsCollectionRef = collection(db, "products");
+  const validateImage = (image) => {
+    setError(null);
 
-  const createProduct = async () => {
-    const name = productNameRef.current.value;
-    const size = productSizeRef.current.value;
+    //Check type
+    if (!image.name.match(/\.(jpg|jpeg|png|gif)$/)) {
+      const error = "Wrong file type";
+      setError(error);
+      return;
+    }
 
-    await addDoc(productsCollectionRef, {
-      productName: name,
-      productSize: size,
-    });
+    // Check Image  Size
+    if (image.size > 5000000) {
+      const error = "file too  large- Upload file less than  5mb";
+      setError(error);
+      return;
+    }
+
+    setError(null);
   };
-
-  const updateProduct = async (id, size) => {
-    const productDoc = doc(db, "products", id);
-
-    await updateDoc(productDoc, {
-      productSize: size + 1,
-    });
-  };
-
-  const deleteProduct = async (id) => {
-    const productDoc = doc(db, "products", id);
-    await deleteDoc(productDoc);
-  };
-
-  useEffect(() => {
-    const getAllProducts = async () => {
-      const data = await getDocs(productsCollectionRef);
-      setProducts(data.docs.map((doc) => ({ ...doc.data(), id: doc.id })));
-    };
-
-    getAllProducts();
-  }, []);
-
-  console.log(products);
-
-  if (!products) {
-    return <>Loading...</>;
-  }
 
   return (
     <div className="App">
-      Product Name
-      <input type="text" ref={productNameRef} />
-      <br />
-      Product Size
-      <input type="text" ref={productSizeRef} />
-      <button onClick={createProduct}>Submit</button>
-      <p>Products</p>
-      {products.map((product) => (
-        <div key={product.id}>
-          Name : {product.productName}
-          Size : {product.productSize}
-          <button
-            onClick={() => {
-              updateProduct(product.id, product.productSize);
-            }}
-          >
-            + 1
-          </button>
-          <button
-            onClick={() => {
-              deleteProduct(product.id);
-            }}
-          >
-            delete
-          </button>
-        </div>
-      ))}
+      <input
+        type="file"
+        onChange={(event) => {
+          validateImage(event.target.files[0]);
+        }}
+      />
+
+      {error && <p>{error}</p>}
     </div>
   );
 }
