@@ -1,27 +1,21 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import "./App.css";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "./firebase-config";
 
 function App() {
-  const [error, setError] = useState(null);
+  const [imageUpload, setImageUpload] = useState();
 
-  const validateImage = (image) => {
-    setError(null);
+  const uploadFile = () => {
+    if (!imageUpload) return;
 
-    //Check type
-    if (!image.name.match(/\.(jpg|jpeg|png|gif)$/)) {
-      const error = "Wrong file type";
-      setError(error);
-      return;
-    }
+    const imageRef = ref(storage, `9jacoder/images/${imageUpload.name}`);
 
-    // Check Image  Size
-    if (image.size > 5000000) {
-      const error = "file too  large- Upload file less than  5mb";
-      setError(error);
-      return;
-    }
-
-    setError(null);
+    uploadBytes(imageRef, imageUpload).then((snapshot) => {
+      getDownloadURL(snapshot.ref).then((url) => {
+        console.log(url);
+      });
+    });
   };
 
   return (
@@ -29,11 +23,10 @@ function App() {
       <input
         type="file"
         onChange={(event) => {
-          validateImage(event.target.files[0]);
+          setImageUpload(event.target.files[0]);
         }}
       />
-
-      {error && <p>{error}</p>}
+      <button onClick={uploadFile}>Upload</button>
     </div>
   );
 }
