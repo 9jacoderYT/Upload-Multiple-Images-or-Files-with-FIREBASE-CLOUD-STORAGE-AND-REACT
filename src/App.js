@@ -1,32 +1,38 @@
 import React, { useState } from "react";
 import "./App.css";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes } from "firebase/storage";
 import { storage } from "./firebase-config";
 
 function App() {
-  const [imageUpload, setImageUpload] = useState();
+  const [images, setImages] = useState();
 
-  const uploadFile = () => {
-    if (!imageUpload) return;
+  const uploadFiles = async () => {
+    for (let i = 0; i < images.length; i++) {
+      const imageRef = ref(storage, `/mulitpleFiles/${images[i].name}`);
 
-    const imageRef = ref(storage, `9jacoder/images/${imageUpload.name}`);
-
-    uploadBytes(imageRef, imageUpload).then((snapshot) => {
-      getDownloadURL(snapshot.ref).then((url) => {
-        console.log(url);
-      });
-    });
+      const result = await uploadBytes(imageRef, images[i])
+        .then(() => {
+          console.log("success");
+        })
+        .catch((error) => {
+          console.log("error");
+        });
+    }
   };
+
+  console.log(images);
 
   return (
     <div className="App">
       <input
         type="file"
+        multiple
         onChange={(event) => {
-          setImageUpload(event.target.files[0]);
+          setImages(event.target.files);
         }}
       />
-      <button onClick={uploadFile}>Upload</button>
+
+      <button onClick={uploadFiles}>Submit</button>
     </div>
   );
 }
